@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -26,26 +27,26 @@ type DbConfig struct {
 	MaxConnLifetime time.Duration
 }
 
-var port, _ = strconv.Atoi(os.Getenv("DB_PORT"))
-var debug, _ = strconv.ParseBool(os.Getenv("DB_DEBUG"))
-var maxOpenConn, _ = strconv.Atoi(os.Getenv("DB_MAX_OPEN_CONNECTIONS"))
-var maxIdleConn, _ = strconv.Atoi(os.Getenv("DB_MAX_IDLE_CONNECTIONS"))
-var lifeTime, _ = strconv.Atoi(os.Getenv("DB_MAX_LIFETIME_CONNECTIONS"))
+func (db *DB) connect() (err error) {
+	var port, _ = strconv.Atoi(os.Getenv("DB_PORT"))
+	var debug, _ = strconv.ParseBool(os.Getenv("DB_DEBUG"))
+	var maxOpenConn, _ = strconv.Atoi(os.Getenv("DB_MAX_OPEN_CONNECTIONS"))
+	var maxIdleConn, _ = strconv.Atoi(os.Getenv("DB_MAX_IDLE_CONNECTIONS"))
+	var lifeTime, _ = strconv.Atoi(os.Getenv("DB_MAX_LIFETIME_CONNECTIONS"))
 
-var dbCfg = &DbConfig{
-	Host:            os.Getenv("DB_HOST"),
-	Port:            port,
-	User:            os.Getenv("DB_USER"),
-	Password:        os.Getenv("DB_PASSWORD"),
-	Name:            os.Getenv("DB_NAME"),
-	SslMode:         os.Getenv("DB_SSL_MODE"),
-	Debug:           debug,
-	MaxOpenConn:     maxOpenConn,
-	MaxIdleConn:     maxIdleConn,
-	MaxConnLifetime: time.Duration(lifeTime) * time.Second,
-}
+	cfg := DbConfig{
+		Host:            os.Getenv("DB_HOST"),
+		Port:            port,
+		User:            os.Getenv("DB_USER"),
+		Password:        os.Getenv("DB_PASSWORD"),
+		Name:            os.Getenv("DB_NAME"),
+		SslMode:         os.Getenv("DB_SSL_MODE"),
+		Debug:           debug,
+		MaxOpenConn:     maxOpenConn,
+		MaxIdleConn:     maxIdleConn,
+		MaxConnLifetime: time.Duration(lifeTime) * time.Second,
+	}
 
-func (db *DB) connect(cfg *DbConfig) (err error) {
 	dbUri := fmt.Sprintf("host=%s port=%d sslmode=%s user=%s password=%s dbname=%s",
 		cfg.Host,
 		cfg.Port,
@@ -55,8 +56,7 @@ func (db *DB) connect(cfg *DbConfig) (err error) {
 		cfg.Name,
 	)
 
-	sqlx.Connect("pgx", dbUri)
-
+	db.DB, err = sqlx.Connect("pgx", dbUri)
 	if err != nil {
 		return err
 	}
@@ -78,5 +78,5 @@ func GetDb() *DB {
 }
 
 func ConnectDB() error {
-	return defaultDb.connect(dbCfg)
+	return defaultDb.connect()
 }

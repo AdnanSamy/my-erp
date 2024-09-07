@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"sam/my-erp/config"
 	"sam/my-erp/model"
 )
@@ -41,8 +42,9 @@ func (repo *ContactRepo) Create(r *model.Contact) error {
 	return err
 }
 
-func (repo *ContactRepo) All() ([]*model.Contact, error) {
-	var contacts []*model.Contact
+func (repo *ContactRepo) All() (*[]model.Contact, error) {
+	// var contacts []*model.Contact
+	contacts := make([]model.Contact, 0)
 
 	query := `
 		SELECT 
@@ -69,7 +71,10 @@ func (repo *ContactRepo) All() ([]*model.Contact, error) {
 			active = true
 	`
 
+	fmt.Print(contacts)
+	fmt.Print(repo.db)
+
 	err := repo.db.Select(&contacts, query)
 
-	return contacts, err
+	return &contacts, err
 }
